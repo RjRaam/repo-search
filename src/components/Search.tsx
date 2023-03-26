@@ -24,22 +24,24 @@ export default function Search({ value = "", placeholder, onSearch }: Props) {
   }
 
   useEffect(() => {
-    let isCancelled = false;
+    //event trigger based on this value
+    let isTyping = false;
 
+    //To pause event trigger till user stops typing
     const handleChange = async () => {
-      //const data = await getdata()
+      //Default delay before onSearch trigger
       await timeout(1000);
 
-      if (!isCancelled) {
-        // alert(`A name was changed: ${input}`);
+      //Extend wait time for every keystroke
+      if (!isTyping) {
         onSearch(input)
       }
     };
 
     handleChange();
-    //Cleanup function is called when useEffect is called again or on unmount
+    //Function to cleanup when useEffect is called again/on unmount
     return () => {
-      isCancelled = true;
+      isTyping = true;
     };
   }, [input]);
 
@@ -47,7 +49,6 @@ export default function Search({ value = "", placeholder, onSearch }: Props) {
     <input type="text"
       value={input || ""}
       placeholder={placeholder}
-      // onKeyDown={handleKey}
       onChange={handleInput}
       size={50}
       className="search-box"

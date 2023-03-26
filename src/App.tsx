@@ -29,58 +29,76 @@ function App() {
   const [page, setPage] = useState(1);
   const [input] = useState("")
   const [data, setData] = useState({} as Data)
-  // const [error, setError] = useState(false)
+  const [error, setError] = useState(false)
+  const [lastpage, setLastpage] = useState(0)
 
-const fetchData = async (input: string) => {
-  try{
-    const queryWords = `q=` + encodeURIComponent(input);
-    const queryPerPage = '&per_page=10';
-    const queryPage = `&page=${page}`;
-    const query = queryWords + queryPage + queryPerPage;
-    let url = `https://api.github.com/search/repositories?${query}`;
-    fetch(url)
-      .then((response) => response.json())
-      .then((data: Data) => {
-        //add any option as default for dropdown
-        setData({
-          total_count: data.total_count,
-          items: data.items,
+  const fetchData = async (input: string) => {
+    try {
+      const queryWords = `q=` + encodeURIComponent(input);
+      let pageItem = 10
+      //If request triggered for last page load only remaining items on the page
+      console.log(page)
+      console.log(lastpage)
+      if(page == lastpage){
+        console.log("here")
+        pageItem = data.total_count % 10
+      }
+      const queryPerPage = `&per_page=${pageItem}`;
+      const queryPage = `&page=${page}`;
+      const query = queryWords + queryPage + queryPerPage;
+      let url = `https://api.github.com/search/repositories?${query}`;
+      fetch(url)
+        .then((response) => response.json())
+        .then((data: Data) => {
+          setData({
+            total_count: data.total_count,
+            items: data.items,
+          });
+          setLastpage(Math.ceil(data.total_count / 10))
+        })
+        .catch((error) => {
+          setError(true)
         });
-      })
-      .catch((error) => {
-        console.log(error)
-      });
-  }catch(Err){
-
+    } catch (err) {
+      setError(true)
+    }
   }
-}
 
+  const resetSearch = () => {
+    setData({ total_count: 0, items: null })
+    setPage(1)
+    setLastpage(0)
+  }
   const onSearch = (input: string) => {
-    if(input){
+    if (input) {
       setPage(1)
       fetchData(`/search/${input}`)
-    } else{
-        setData({total_count: 0 , items: null})
+    } else {
+      resetSearch()
     }
-    
+  }
+
+  const reloadPage = (page : number) => {
+    setPage(page)
+    fetchData(`/search/${input}`)
   }
 
   const handlePagination = (action: string) => {
-    let offset = page * 10;
     //Move to first page if current page is not first page
-    if (action == "first" && page!=1){
-      setPage(1);
-      fetchData(`/search/${input}`)
+    if (action == "first" && page > 1) {
+      reloadPage(1)
     }
     //Move to previous page if current page is not first page
     if (action === "prev" && page >= 2) {
-      setPage(page - 1);
-      fetchData(`/search/${input}`)
+      reloadPage(page - 1)
     }
     //Move to next page if current page is not last page
-    if (action === "next" && page > 0 && offset < data.total_count) {
-      setPage(page + 1);
-      fetchData(`/search/${input}`)
+    if (action === "next" && page > 0 && page < lastpage ){
+      reloadPage(page + 1)
+    }
+    //Move to last page
+    if (action === "last" && page < lastpage) {
+      reloadPage(lastpage)
     }
   }
 
@@ -88,9 +106,8 @@ const fetchData = async (input: string) => {
     if (input)
       fetchData(input)
     else
-      setData({total_count: 0 , items: null})
-
-  }, [input, page]);
+      resetSearch()
+  }, [input]);
 
   return (
     <>
@@ -107,17 +124,21 @@ const fetchData = async (input: string) => {
         <>
           <SearchResult data={data} />
           <div className="icon" style={{ paddingRight: 50 }}>
-            <MdFirstPage onClick={() => handlePagination("first")}/>
-            <LeftIcon onClick={() => handlePagination("prev")}/>
+            <MdFirstPage onClick={() => handlePagination("first")} />
+            <LeftIcon onClick={() => handlePagination("prev")} />
             Previous
           </div>
           {page}
           <div className="icon" style={{ paddingLeft: 50 }}>
-            Next <RightIcon onClick={() => handlePagination("next")}/>
-            <MdLastPage onClick={() => handlePagination("last")}/>
+            Next <RightIcon onClick={() => handlePagination("next")} />
+            <MdLastPage onClick={() => handlePagination("last")} />
           </div>
         </>
-      ) : ""}
+      ) : (error ? (
+        <div className='error'>
+          Oops! Something went Wrong!!!
+        </div>
+      ) : (<></>))}
     </>
   );
 }

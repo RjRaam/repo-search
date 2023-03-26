@@ -16,6 +16,16 @@ body {
   padding-bottom: 10px
 }
 
+.error {
+  color: red;
+  font-family: Sans-Serif;
+  text-align: center;
+  font-size: large;
+  font-weight: bolder;
+  display: inline-flex;
+  padding-bottom: 10px
+}
+
 .search-result {
   /* color: rgb(94, 155, 53); */
   font-family: Sans-Serif;
