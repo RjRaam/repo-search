@@ -1,6 +1,6 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   MdFirstPage,
   MdLastPage,
@@ -30,7 +30,7 @@ function App() {
   const [input] = useState("")
   const [data, setData] = useState({} as Data)
   const [error, setError] = useState(false)
-  const [lastpage, setLastpage] = useState(0)
+  const [lastpage, setLastpage] = useState(1)
 
   const fetchData = async (input: string) => {
     try {
@@ -39,8 +39,7 @@ function App() {
       //If request triggered for last page load only remaining items on the page
       console.log(page)
       console.log(lastpage)
-      if(page == lastpage){
-        console.log("here")
+      if(page === lastpage){
         pageItem = data.total_count % 10
       }
       const queryPerPage = `&per_page=${pageItem}`;
@@ -67,25 +66,34 @@ function App() {
   const resetSearch = () => {
     setData({ total_count: 0, items: null })
     setPage(1)
-    setLastpage(0)
+    setLastpage(1)
   }
+
   const onSearch = (input: string) => {
     if (input) {
-      setPage(1)
-      fetchData(`/search/${input}`)
+      reloadPage(1)
     } else {
       resetSearch()
     }
   }
 
-  const reloadPage = (page : number) => {
+  const mem = useMemo(() => {
     setPage(page)
+    setLastpage(page)
+  },[page])
+
+  const reloadPage = (page : number) => {
+    console.log('setting page:' + page)
+    setPage(page)
+    setLastpage(page)
     fetchData(`/search/${input}`)
   }
 
+  useCallback(() => reloadPage(page), [page])
+
   const handlePagination = (action: string) => {
     //Move to first page if current page is not first page
-    if (action == "first" && page > 1) {
+    if (action === "first" && page > 1) {
       reloadPage(1)
     }
     //Move to previous page if current page is not first page
